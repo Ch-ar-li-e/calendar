@@ -477,6 +477,35 @@
   }
   .cat-add-btn:hover { border-color: var(--primary); color: var(--primary); }
 
+  /* ===== 时间选择器 ===== */
+  .time-picker { display: flex; align-items: center; gap: 0.35rem; flex-wrap: wrap; width: 100%; }
+  .time-picker select {
+    padding: 0.55rem 0.5rem;
+    border: 2px solid var(--border);
+    border-radius: 0.5rem;
+    background: var(--input-bg); color: var(--text);
+    font-size: 0.85rem; outline: none; cursor: pointer;
+  }
+  .time-picker select:focus { border-color: var(--primary); }
+  .tp-clear {
+    border: 1.5px solid var(--border); background: none;
+    color: var(--text-secondary);
+    border-radius: 0.5rem; padding: 0.5rem 0.7rem;
+    font-size: 0.78rem; cursor: pointer;
+    transition: all 0.15s;
+  }
+  .tp-clear:hover { border-color: var(--today); color: var(--today); }
+
+  .mini-btn {
+    border: 1.5px solid var(--border); background: none;
+    color: var(--text-secondary);
+    border-radius: 0.5rem; padding: 0.3rem 0.6rem;
+    font-size: 0.75rem; cursor: pointer;
+    transition: all 0.15s;
+  }
+  .mini-btn:hover { border-color: var(--primary); color: var(--primary); }
+  .mini-btn.danger:hover { border-color: var(--today); color: var(--today); }
+
   /* ===== 提醒 Toast ===== */
   .toast-wrap {
     position: fixed;
@@ -571,6 +600,10 @@
     <div class="side-panel">
       <div class="panel-header">
         <h3>当日任务</h3>
+        <div style="display:flex; gap:0.4rem">
+          <button class="mini-btn" onclick="clearCompleted()">清除已完成</button>
+          <button class="mini-btn danger" onclick="clearDay()">清空当日</button>
+        </div>
       </div>
       <div class="panel-date" id="panelDate"></div>
       <div class="filter-chips" id="filterChips"></div>
@@ -578,7 +611,15 @@
       <div class="add-form">
         <div class="cat-picker" id="catPicker"></div>
         <input type="text" id="taskInput" placeholder="输入任务内容..." maxlength="100">
-        <input type="time" id="taskTime">
+        <div class="time-picker">
+          <select id="tpHour" title="小时"></select>
+          <select id="tpMin" title="分钟"></select>
+          <select id="tpAmpm" title="上午/下午">
+            <option value="am">上午</option>
+            <option value="pm">下午</option>
+          </select>
+          <button type="button" class="tp-clear" onclick="clearTimePicker()">✕ 不定时</button>
+        </div>
         <button class="primary-btn" onclick="addTask()">添加</button>
       </div>
     </div>
@@ -1013,10 +1054,51 @@ function renderTaskList() {
   });
 }
 
+// ========== 时间选择器 ==========
+function initTimePicker() {
+  const hourSel = document.getElementById('tpHour');
+  const minSel = document.getElementById('tpMin');
+
+  const hNone = document.createElement('option');
+  hNone.value = ''; hNone.textContent = '时';
+  hourSel.appendChild(hNone);
+  [12, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].forEach(h => {
+    const o = document.createElement('option');
+    o.value = h; o.textContent = h + ' 点';
+    hourSel.appendChild(o);
+  });
+
+  const mNone = document.createElement('option');
+  mNone.value = ''; mNone.textContent = '分';
+  minSel.appendChild(mNone);
+  for (let m = 0; m < 60; m += 5) {
+    const o = document.createElement('option');
+    o.value = String(m).padStart(2, '0');
+    o.textContent = String(m).padStart(2, '0') + ' 分';
+    minSel.appendChild(o);
+  }
+}
+
+function getTimeFromPicker() {
+  const h = document.getElementById('tpHour').value;
+  const m = document.getElementById('tpMin').value || '00';
+  const ap = document.getElementById('tpAmpm').value;
+  if (!h) return '';
+  let hour = parseInt(h, 10);
+  if (ap === 'am') hour = hour === 12 ? 0 : hour;
+  else hour = hour === 12 ? 12 : hour + 12;
+  return String(hour).padStart(2, '0') + ':' + m;
+}
+
+function clearTimePicker() {
+  document.getElementById('tpHour').value = '';
+  document.getElementById('tpMin').value = '';
+  document.getElementById('tpAmpm').value = 'am';
+}
+
 // ========== 任务操作 ==========
 function addTask() {
   const input = document.getElementById('taskInput');
-  const timeInput = document.getElementById('taskTime');
   const text = input.value.trim();
   if (!text) return;
 
@@ -1025,7 +1107,7 @@ function addTask() {
 
   state.tasks[key].push({
     text: text,
-    time: timeInput.value || '',
+    time: getTimeFromPicker(),
     cat: state.selectedCat || (state.settings.categories[0] ? state.settings.categories[0].id : null),
     done: false,
     created: Date.now()
@@ -1033,7 +1115,31 @@ function addTask() {
 
   saveTasks();
   input.value = '';
-  timeInput.value = '';
+  clearTimePicker();
+  renderSidePanel();
+  renderCalendar();
+}
+
+function clearCompleted() {
+  const key = dateKey(state.selectedDate);
+  const list = state.tasks[key];
+  if (!list || !list.some(t => t.done)) { alert('这一天没有已完成的任务'); return; }
+  if (!confirm('确定删除当天的所有已完成任务？')) return;
+  const remaining = list.filter(t => !t.done);
+  if (remaining.length === 0) delete state.tasks[key];
+  else state.tasks[key] = remaining;
+  saveTasks();
+  renderSidePanel();
+  renderCalendar();
+}
+
+function clearDay() {
+  const key = dateKey(state.selectedDate);
+  const list = state.tasks[key];
+  if (!list || list.length === 0) { alert('这一天还没有任务'); return; }
+  if (!confirm(`确定清空 ${formatDateChinese(state.selectedDate)} 的全部 ${list.length} 项任务？\n此操作不可恢复！`)) return;
+  delete state.tasks[key];
+  saveTasks();
   renderSidePanel();
   renderCalendar();
 }
@@ -1327,6 +1433,7 @@ window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () 
 
 // ========== 初始化 ==========
 applySettings();
+initTimePicker();
 goToday();
 checkReminders();
 setInterval(checkReminders, 20000); // 每 20 秒检查一次到点任务
