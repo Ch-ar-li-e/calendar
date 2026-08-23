@@ -477,6 +477,55 @@
   }
   .cat-add-btn:hover { border-color: var(--primary); color: var(--primary); }
 
+  /* ===== 提醒 Toast ===== */
+  .toast-wrap {
+    position: fixed;
+    top: 1rem;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 300;
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    width: min(92vw, 420px);
+    pointer-events: none;
+  }
+  .toast {
+    background: var(--card);
+    border: 2px solid var(--primary);
+    box-shadow: var(--shadow-lg);
+    border-radius: 0.75rem;
+    padding: 0.85rem 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    pointer-events: auto;
+    animation: toastIn 0.35s cubic-bezier(0.2, 0.9, 0.3, 1.2);
+    cursor: pointer;
+  }
+  .toast-icon { font-size: 1.4rem; }
+  .toast-body { flex: 1; min-width: 0; }
+  .toast-title { font-size: 0.75rem; color: var(--primary); font-weight: 700; margin-bottom: 2px; }
+  .toast-text { font-size: 0.95rem; font-weight: 600; word-break: break-word; }
+  .toast-time { font-size: 0.75rem; color: var(--text-secondary); margin-top: 2px; }
+  .toast-close { background: none; border: none; color: var(--text-secondary); font-size: 1.1rem; cursor: pointer; }
+  @keyframes toastIn {
+    from { opacity: 0; transform: translateY(-1.2rem) scale(0.95); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+  }
+  .toast.out { opacity: 0; transform: translateY(-1rem); transition: all 0.3s; }
+
+  /* 超时标记 */
+  .overdue-badge {
+    color: #fff;
+    background: var(--today);
+    font-size: 0.7rem;
+    padding: 0 0.4rem;
+    border-radius: 0.25rem;
+    font-weight: 600;
+  }
+  .task-item.overdue .task-text { color: var(--today); }
+
   .footer-note {
     text-align: center; color: var(--text-secondary);
     font-size: 0.8rem; margin-top: 2rem; padding: 1.25rem;
@@ -536,9 +585,13 @@
   </div>
 
   <div class="footer-note">
-    数据保存在本地浏览器中，关闭页面也不会丢失 · 可离线使用
+    数据保存在本地浏览器中，关闭页面也不会丢失 · 可离线使用<br>
+    任务提醒需保持本页面开启（可最小化或放后台标签页）
   </div>
 </div>
+
+<!-- 提醒 Toast 容器 -->
+<div class="toast-wrap" id="toastWrap"></div>
 
 <!-- 设置弹窗 -->
 <div class="modal-overlay" id="settingsModal">
@@ -595,6 +648,31 @@
     </div>
 
     <div class="settings-section">
+      <h4>⏰ 提醒</h4>
+      <div class="setting-row">
+        <label>提醒音效</label>
+        <div class="seg-control" id="soundSeg">
+          <button class="seg-btn" data-val="on" onclick="setNotify('sound', true)">🔔 开</button>
+          <button class="seg-btn" data-val="off" onclick="setNotify('sound', false)">关</button>
+        </div>
+      </div>
+      <div class="setting-row">
+        <label>系统通知</label>
+        <div class="seg-control" id="systemSeg">
+          <button class="seg-btn" data-val="on" onclick="setNotify('system', true)">📢 开</button>
+          <button class="seg-btn" data-val="off" onclick="setNotify('system', false)">关</button>
+        </div>
+      </div>
+      <div class="setting-row">
+        <label>预览提醒效果</label>
+        <button class="cat-add-btn" style="border-style:solid" onclick="testReminder()">▶ 试一试</button>
+      </div>
+      <p style="font-size:0.75rem;color:var(--text-secondary);line-height:1.6;margin-top:0.5rem">
+        💡 提醒条件：给任务设置了时间、任务未完成、且日历页面保持打开（可以最小化或放在后台标签页）。到点会弹提示条并播放音效；开启系统通知后即使页面在后台也能收到系统弹窗。
+      </p>
+    </div>
+
+    <div class="settings-section">
       <h4>任务分类管理</h4>
       <div class="cat-manage" id="catManage"></div>
       <button class="cat-add-btn" style="margin-top:0.6rem" onclick="addCategory()">+ 新增分类</button>
@@ -612,6 +690,7 @@ const DEFAULT_SETTINGS = {
   fontSize: 'm',             // s | m | l
   layout: 'cozy',            // cozy | compact
   weekStart: 0,              // 0=周日 1=周一
+  notify: { sound: true, system: false },
   categories: [
     { id: 'work',  name: '工作', color: '#4f7cff' },
     { id: 'life',  name: '生活', color: '#22c55e' },
@@ -697,6 +776,29 @@ function setSetting(key, val) {
   renderSettingsUI();
   renderCalendar();
   renderSidePanel();
+}
+
+function setNotify(key, val) {
+  if (key === 'system' && val) {
+    if (!('Notification' in window)) {
+      alert('当前浏览器不支持系统通知');
+      return;
+    }
+    Notification.requestPermission().then(p => {
+      if (p === 'granted') {
+        state.settings.notify.system = true;
+      } else {
+        alert('你在浏览器里拒绝/关闭了通知权限，无法开启。\n请在浏览器地址栏的站点设置中允许通知后重试。');
+        state.settings.notify.system = false;
+      }
+      saveSettings();
+      renderSettingsUI();
+    });
+    return;
+  }
+  state.settings.notify[key] = val;
+  saveSettings();
+  renderSettingsUI();
 }
 
 // ========== 日历渲染 ==========
@@ -852,13 +954,18 @@ function renderTaskList() {
 
   // 需要真实索引来操作原数组
   const allTasks = state.tasks[dateKey(state.selectedDate)] || [];
+  const now = new Date();
+  const isToday = isSameDay(state.selectedDate, now);
+  const nowHHMM = String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
 
   dayTasks.forEach(task => {
     const idx = allTasks.indexOf(task);
     const cat = getCategory(task.cat);
+    const overdue = isToday && !task.done && task.time && task.time < nowHHMM;
     const item = document.createElement('div');
     item.className = 'task-item';
     if (task.done) item.classList.add('done');
+    if (overdue) item.classList.add('overdue');
     item.style.borderLeftColor = cat.color;
 
     const check = document.createElement('div');
@@ -879,6 +986,12 @@ function renderTaskList() {
       const t = document.createElement('span');
       t.textContent = '⏰ ' + task.time;
       meta.appendChild(t);
+    }
+    if (overdue) {
+      const od = document.createElement('span');
+      od.className = 'overdue-badge';
+      od.textContent = '已超时';
+      meta.appendChild(od);
     }
     const catEl = document.createElement('span');
     catEl.className = 'task-cat';
@@ -988,6 +1101,99 @@ function renderStats() {
   `;
 }
 
+// ========== 提醒引擎 ==========
+const remindedIds = new Set(); // 本会话已提醒过的任务
+
+function showToast(task, cat) {
+  const wrap = document.getElementById('toastWrap');
+  const toast = document.createElement('div');
+  toast.className = 'toast';
+  toast.innerHTML = `
+    <div class="toast-icon">⏰</div>
+    <div class="toast-body">
+      <div class="toast-title">任务提醒</div>
+      <div class="toast-text">${task.text.replace(/</g, '&lt;')}</div>
+      <div class="toast-time">${task.time ? '计划时间 ' + task.time : ''}${cat ? ' · ' + cat : ''}</div>
+    </div>
+    <button class="toast-close">×</button>
+  `;
+  const dismiss = () => {
+    toast.classList.add('out');
+    setTimeout(() => toast.remove(), 320);
+  };
+  toast.querySelector('.toast-close').addEventListener('click', e => { e.stopPropagation(); dismiss(); });
+  toast.addEventListener('click', dismiss);
+  wrap.appendChild(toast);
+  setTimeout(dismiss, 10000);
+}
+
+function playChime() {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const notes = [880, 1108.7, 1318.5]; // 简单三连音
+    notes.forEach((freq, i) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain); gain.connect(ctx.destination);
+      osc.frequency.value = freq;
+      osc.type = 'sine';
+      const start = ctx.currentTime + i * 0.22;
+      gain.gain.setValueAtTime(0.001, start);
+      gain.gain.exponentialRampToValueAtTime(0.25, start + 0.03);
+      gain.gain.exponentialRampToValueAtTime(0.001, start + 0.5);
+      osc.start(start); osc.stop(start + 0.55);
+    });
+  } catch(e) {}
+}
+
+function sendSystemNotification(task) {
+  if (!state.settings.notify.system) return;
+  if (!('Notification' in window) || Notification.permission !== 'granted') return;
+  try {
+    const n = new Notification('📅 任务提醒', {
+      body: (task.time ? '[' + task.time + '] ' : '') + task.text,
+      tag: 'cal_' + task.created
+    });
+    n.onclick = () => { window.focus(); n.close(); };
+  } catch(e) {}
+}
+
+function triggerReminder(task) {
+  const cat = getCategory(task.cat);
+  showToast(task, cat.name !== '未分类' ? cat.name : null);
+  if (state.settings.notify.sound) playChime();
+  sendSystemNotification(task);
+}
+
+function checkReminders() {
+  const now = new Date();
+  const key = dateKey(now);
+  const dayTasks = state.tasks[key] || [];
+  const hhmm = String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
+
+  let changed = false;
+  dayTasks.forEach(t => {
+    if (t.time && !t.done && t.time === hhmm && !remindedIds.has(t.created)) {
+      remindedIds.add(t.created);
+      triggerReminder(t);
+      changed = true;
+    }
+  });
+
+  // 若正在查看今天，刷新面板以更新超时标记
+  if (isSameDay(state.selectedDate, now)) renderSidePanel();
+  return changed;
+}
+
+function testReminder() {
+  triggerReminder({
+    text: '这是一条测试提醒（比如：该写作业啦！）',
+    time: String(new Date().getHours()).padStart(2, '0') + ':' + String(new Date().getMinutes()).padStart(2, '0'),
+    cat: null,
+    created: Date.now()
+  });
+}
+
 // ========== 设置弹窗 ==========
 function openSettings() {
   renderSettingsUI();
@@ -1008,6 +1214,9 @@ function renderSettingsUI() {
   highlight('fontSizeSeg', state.settings.fontSize);
   highlight('layoutSeg', state.settings.layout);
   highlight('weekStartSeg', state.settings.weekStart);
+  highlight('soundSeg', state.settings.notify.sound ? 'on' : 'off');
+  const sysOk = state.settings.notify.system && 'Notification' in window && Notification.permission === 'granted';
+  highlight('systemSeg', sysOk ? 'on' : 'off');
 
   // 主题色
   const sw = document.getElementById('swatches');
@@ -1119,6 +1328,8 @@ window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () 
 // ========== 初始化 ==========
 applySettings();
 goToday();
+checkReminders();
+setInterval(checkReminders, 20000); // 每 20 秒检查一次到点任务
 </script>
 
 </body>
