@@ -1,22 +1,48 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="zh-CN" data-theme="light" data-fontsize="m" data-layout="cozy">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>我的日历 - 每日任务管理</title>
 <style>
   :root {
+    --primary: #4f7cff;
+    --primary-light: color-mix(in srgb, var(--primary) 14%, var(--card));
     --bg: #f0f2f5;
     --card: #ffffff;
-    --primary: #4f7cff;
-    --primary-light: #e8efff;
     --text: #1a1a2e;
     --text-secondary: #6b7280;
     --border: #e5e7eb;
     --today: #ff6b6b;
-    --task-dot: #4f7cff;
+    --hover-bg: #f9f9fb;
+    --input-bg: #ffffff;
     --shadow: 0 2px 12px rgba(0,0,0,0.06);
     --shadow-lg: 0 10px 40px rgba(0,0,0,0.15);
+    --cell-min: 74px;
+    --cell-pad: 0.5rem;
+    --card-pad: 1.5rem;
+  }
+
+  html[data-theme="dark"] {
+    --bg: #0f1115;
+    --card: #181b21;
+    --text: #e8eaed;
+    --text-secondary: #9aa0a6;
+    --border: #2a2e37;
+    --hover-bg: #1f232b;
+    --input-bg: #181b21;
+    --shadow: 0 2px 12px rgba(0,0,0,0.45);
+    --shadow-lg: 0 10px 40px rgba(0,0,0,0.6);
+  }
+
+  html[data-fontsize="s"] { font-size: 14px; }
+  html[data-fontsize="m"] { font-size: 16px; }
+  html[data-fontsize="l"] { font-size: 18px; }
+
+  html[data-layout="compact"] {
+    --cell-min: 54px;
+    --cell-pad: 0.3rem;
+    --card-pad: 0.9rem;
   }
 
   * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -26,89 +52,97 @@
     background: var(--bg);
     color: var(--text);
     min-height: 100vh;
+    transition: background 0.25s, color 0.25s;
   }
 
-  /* 顶部栏 */
+  button { font-family: inherit; }
+
+  /* ===== 顶部栏 ===== */
   .header {
     background: var(--card);
     box-shadow: var(--shadow);
-    padding: 18px 28px;
+    padding: 1rem 1.75rem;
     display: flex;
     align-items: center;
     justify-content: space-between;
     position: sticky;
     top: 0;
     z-index: 100;
+    gap: 0.5rem;
+    flex-wrap: wrap;
   }
 
-  .header-left { display: flex; align-items: center; gap: 12px; }
+  .header-left { display: flex; align-items: center; gap: 0.75rem; }
+  .logo { font-size: 1.5rem; }
+  .header h1 { font-size: 1.25rem; font-weight: 700; }
 
-  .logo {
-    font-size: 24px;
-  }
+  .header-actions { display: flex; gap: 0.5rem; align-items: center; }
 
-  .header h1 {
-    font-size: 20px;
-    font-weight: 700;
-  }
-
-  .header-actions { display: flex; gap: 10px; align-items: center; }
-
-  .nav-btn, .today-btn, .add-btn {
+  .nav-btn, .today-btn {
     background: none;
     border: none;
     cursor: pointer;
-    font-size: 15px;
+    font-size: 0.95rem;
     color: var(--text-secondary);
-    padding: 8px 14px;
-    border-radius: 8px;
+    padding: 0.5rem 0.85rem;
+    border-radius: 0.5rem;
     transition: all 0.2s;
   }
-
   .nav-btn:hover, .today-btn:hover { background: var(--primary-light); color: var(--primary); }
-
   .today-btn { font-weight: 600; color: var(--primary); }
 
-  .add-btn {
+  .add-btn, .primary-btn {
     background: var(--primary);
     color: #fff;
+    border: none;
+    cursor: pointer;
     font-weight: 600;
-    padding: 8px 18px;
+    padding: 0.5rem 1.1rem;
+    border-radius: 0.5rem;
+    font-size: 0.95rem;
+    transition: filter 0.2s;
   }
-  .add-btn:hover { background: #3a63e0; }
+  .add-btn:hover, .primary-btn:hover { filter: brightness(0.9); }
 
-  /* 主容器 */
+  .icon-btn {
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: 0.5rem;
+    width: 2.3rem;
+    height: 2.3rem;
+    font-size: 1.05rem;
+    cursor: pointer;
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+  }
+  .icon-btn:hover { border-color: var(--primary); color: var(--primary); }
+
+  /* ===== 主容器 ===== */
   .container {
     max-width: 1100px;
     margin: 0 auto;
-    padding: 24px 20px 60px;
+    padding: 1.5rem 1.25rem 4rem;
   }
 
-  /* 月份标题 */
-  .month-title {
-    text-align: center;
-    margin-bottom: 24px;
-  }
-  .month-title h2 {
-    font-size: 28px;
-    font-weight: 700;
-    display: inline-flex;
-    align-items: center;
-    gap: 10px;
-  }
+  .month-title { text-align: center; margin-bottom: 1.5rem; }
+  .month-title h2 { font-size: 1.75rem; font-weight: 700; }
+
   .month-nav {
     display: flex;
     align-items: center;
-    gap: 20px;
+    gap: 1.25rem;
     justify-content: center;
   }
   .month-nav button {
     background: var(--card);
     border: none;
-    width: 38px;
-    height: 38px;
-    border-radius: 10px;
-    font-size: 18px;
+    width: 2.4rem;
+    height: 2.4rem;
+    border-radius: 0.6rem;
+    font-size: 1.1rem;
     cursor: pointer;
     color: var(--primary);
     box-shadow: var(--shadow);
@@ -116,316 +150,341 @@
   }
   .month-nav button:hover { background: var(--primary); color: #fff; }
 
-  /* 日历网格 */
+  /* ===== 统计条 ===== */
+  .stats-bar { display: flex; gap: 1rem; margin-bottom: 1.25rem; flex-wrap: wrap; }
+  .stat-item {
+    background: var(--card);
+    padding: 0.85rem 1.25rem;
+    border-radius: 0.75rem;
+    box-shadow: var(--shadow);
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+  }
+  .stat-num { font-size: 1.4rem; font-weight: 700; color: var(--primary); }
+  .stat-label { font-size: 0.8rem; color: var(--text-secondary); }
+
+  /* ===== 布局 ===== */
+  .main-layout {
+    display: grid;
+    grid-template-columns: 1fr 380px;
+    gap: 1.5rem;
+  }
+  @media (max-width: 900px) { .main-layout { grid-template-columns: 1fr; } }
+
+  /* ===== 日历 ===== */
   .calendar-card {
     background: var(--card);
-    border-radius: 16px;
+    border-radius: 1rem;
     box-shadow: var(--shadow);
-    padding: 24px;
-    margin-bottom: 24px;
+    padding: var(--card-pad);
+    margin-bottom: 1.5rem;
   }
 
   .weekdays {
     display: grid;
     grid-template-columns: repeat(7, 1fr);
-    gap: 8px;
-    margin-bottom: 12px;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
   }
-
   .weekdays div {
     text-align: center;
-    font-size: 13px;
+    font-size: 0.8rem;
     font-weight: 600;
     color: var(--text-secondary);
-    padding: 8px 0;
+    padding: 0.5rem 0;
   }
-  .weekdays div:first-child, .weekdays div:last-child {
-    color: var(--today);
-  }
+  .weekdays div:first-child, .weekdays div:last-child { color: var(--today); }
 
   .days-grid {
     display: grid;
     grid-template-columns: repeat(7, 1fr);
-    gap: 8px;
+    gap: 0.5rem;
   }
 
   .day-cell {
-    aspect-ratio: 1;
+    min-height: var(--cell-min);
     border: 2px solid transparent;
-    border-radius: 12px;
-    padding: 8px;
+    border-radius: 0.75rem;
+    padding: var(--cell-pad);
     cursor: pointer;
     display: flex;
     flex-direction: column;
     align-items: flex-start;
     transition: all 0.18s;
-    position: relative;
-    background: #fafafa;
-    min-height: 72px;
+    background: var(--hover-bg);
   }
-
   .day-cell:hover {
     border-color: var(--primary);
     transform: translateY(-2px);
     box-shadow: var(--shadow);
   }
-
-  .day-cell.other-month {
-    opacity: 0.3;
-    background: transparent;
-  }
+  .day-cell.other-month { opacity: 0.3; background: transparent; }
   .day-cell.other-month:hover { opacity: 0.6; }
+  .day-cell.today { background: var(--primary-light); border-color: var(--primary); }
+  .day-number { font-size: 1rem; font-weight: 700; margin-bottom: 0.25rem; }
+  .day-cell.today .day-number { color: var(--primary); }
+  .day-cell.weekend .day-number { color: var(--today); }
 
-  .day-cell.today {
-    background: var(--primary-light);
-    border-color: var(--primary);
-  }
-
-  .day-number {
-    font-size: 16px;
-    font-weight: 700;
-    margin-bottom: 4px;
-  }
-
-  .day-cell.today .day-number {
-    color: var(--primary);
-  }
-
-  .day-cell.weekend .day-number {
-    color: var(--today);
-  }
-
-  .task-preview {
-    flex: 1;
-    width: 100%;
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-  }
+  .task-preview { flex: 1; width: 100%; overflow: hidden; display: flex; flex-direction: column; gap: 2px; }
 
   .task-tag {
-    font-size: 11px;
-    padding: 2px 6px;
-    border-radius: 4px;
-    background: var(--primary-light);
-    color: var(--primary);
+    font-size: 0.7rem;
+    padding: 1px 0.4rem;
+    border-radius: 0.25rem;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    line-height: 1.4;
+    line-height: 1.5;
   }
-
-  .task-tag.done {
-    text-decoration: line-through;
-    opacity: 0.5;
-  }
-
-  .more-tasks {
-    font-size: 10px;
-    color: var(--text-secondary);
-    margin-top: 2px;
-  }
-
-  /* 空状态 */
+  .task-tag.done { text-decoration: line-through; opacity: 0.5; }
+  .more-tasks { font-size: 0.65rem; color: var(--text-secondary); margin-top: 2px; }
   .empty-hint {
-    flex: 1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 100%;
-    font-size: 11px;
-    color: #ccc;
+    flex: 1; display: flex; align-items: center; justify-content: center;
+    width: 100%; font-size: 0.7rem; color: var(--border);
   }
 
-  /* 侧边面板 */
-  .side-panel {
-    background: var(--card);
-    border-radius: 16px;
-    box-shadow: var(--shadow);
-    padding: 24px;
-  }
-
-  .panel-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 16px;
-  }
-  .panel-header h3 { font-size: 18px; }
-
+  /* ===== 侧边面板 ===== */
+  .side-panel { background: var(--card); border-radius: 1rem; box-shadow: var(--shadow); padding: var(--card-pad); }
+  .panel-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; }
+  .panel-header h3 { font-size: 1.1rem; }
   .panel-date {
-    font-size: 15px;
+    font-size: 0.95rem;
     color: var(--text-secondary);
-    margin-bottom: 20px;
-    padding-bottom: 16px;
+    margin-bottom: 1rem;
+    padding-bottom: 1rem;
     border-bottom: 1px solid var(--border);
   }
 
-  /* 任务列表 */
-  .task-list { display: flex; flex-direction: column; gap: 10px; }
-
-  .task-empty {
-    text-align: center;
+  /* 分类筛选 */
+  .filter-chips { display: flex; gap: 0.4rem; flex-wrap: wrap; margin-bottom: 1rem; }
+  .filter-chip {
+    border: 1.5px solid var(--border);
+    background: none;
     color: var(--text-secondary);
-    padding: 40px 0;
-    font-size: 14px;
+    font-size: 0.75rem;
+    padding: 0.25rem 0.7rem;
+    border-radius: 2rem;
+    cursor: pointer;
+    display: flex; align-items: center; gap: 0.3rem;
+    transition: all 0.15s;
   }
+  .filter-chip .dot { width: 0.5rem; height: 0.5rem; border-radius: 50%; }
+  .filter-chip.active { border-color: var(--primary); color: var(--primary); background: var(--primary-light); }
+
+  /* 任务列表 */
+  .task-list { display: flex; flex-direction: column; gap: 0.6rem; min-height: 8rem; }
+  .task-empty { text-align: center; color: var(--text-secondary); padding: 2.5rem 0; font-size: 0.9rem; }
 
   .task-item {
-    display: flex;
-    align-items: flex-start;
-    gap: 10px;
-    padding: 12px;
-    background: #f9f9fb;
-    border-radius: 10px;
-    transition: all 0.2s;
+    display: flex; align-items: flex-start; gap: 0.6rem;
+    padding: 0.75rem;
+    background: var(--hover-bg);
+    border-radius: 0.6rem;
+    transition: background 0.2s;
+    border-left: 3px solid transparent;
   }
   .task-item:hover { background: var(--primary-light); }
 
   .task-check {
-    width: 22px;
-    height: 22px;
+    width: 1.4rem; height: 1.4rem;
     border: 2px solid var(--primary);
-    border-radius: 6px;
+    border-radius: 0.4rem;
     cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-    margin-top: 1px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; margin-top: 1px;
     transition: all 0.2s;
   }
   .task-check:hover { background: var(--primary); }
-  .task-check.checked {
-    background: var(--primary);
-  }
-  .task-check.checked::after {
-    content: '✓';
-    color: #fff;
-    font-size: 14px;
-    font-weight: bold;
-  }
+  .task-check.checked { background: var(--primary); }
+  .task-check.checked::after { content: '✓'; color: #fff; font-size: 0.9rem; font-weight: bold; }
 
   .task-body { flex: 1; min-width: 0; }
-
-  .task-text {
-    font-size: 15px;
-    line-height: 1.5;
-    word-break: break-word;
+  .task-text { font-size: 0.95rem; line-height: 1.5; word-break: break-word; }
+  .task-item.done .task-text { text-decoration: line-through; color: var(--text-secondary); }
+  .task-meta { font-size: 0.75rem; color: var(--text-secondary); margin-top: 2px; display: flex; gap: 0.6rem; flex-wrap: wrap; }
+  .task-cat {
+    display: inline-flex; align-items: center; gap: 0.25rem;
+    padding: 0 0.4rem; border-radius: 0.25rem;
   }
-  .task-item.done .task-text {
-    text-decoration: line-through;
-    color: var(--text-secondary);
-  }
-
-  .task-time {
-    font-size: 12px;
-    color: var(--text-secondary);
-    margin-top: 2px;
-  }
+  .task-cat .dot { width: 0.45rem; height: 0.45rem; border-radius: 50%; }
 
   .task-delete {
-    background: none;
-    border: none;
-    color: #ccc;
-    cursor: pointer;
-    font-size: 18px;
-    padding: 0 4px;
-    flex-shrink: 0;
-    transition: color 0.2s;
+    background: none; border: none; color: var(--border);
+    cursor: pointer; font-size: 1.1rem; padding: 0 0.25rem;
+    flex-shrink: 0; transition: color 0.2s;
   }
   .task-delete:hover { color: var(--today); }
 
   /* 添加任务表单 */
   .add-form {
-    display: flex;
-    gap: 8px;
-    margin-bottom: 16px;
-    margin-top: 16px;
-    padding-top: 16px;
+    display: flex; gap: 0.5rem;
+    margin-top: 1rem; padding-top: 1rem;
     border-top: 1px solid var(--border);
+    flex-wrap: wrap;
   }
   .add-form input[type="text"] {
-    flex: 1;
-    padding: 10px 14px;
+    flex: 1; min-width: 8rem;
+    padding: 0.6rem 0.85rem;
     border: 2px solid var(--border);
-    border-radius: 8px;
-    font-size: 15px;
-    outline: none;
+    border-radius: 0.5rem;
+    font-size: 0.95rem; outline: none;
+    background: var(--input-bg); color: var(--text);
     transition: border 0.2s;
   }
   .add-form input[type="text"]:focus { border-color: var(--primary); }
   .add-form input[type="time"] {
-    padding: 10px 8px;
+    padding: 0.6rem 0.5rem;
     border: 2px solid var(--border);
-    border-radius: 8px;
-    font-size: 14px;
-    outline: none;
-    width: 90px;
+    border-radius: 0.5rem;
+    font-size: 0.85rem; outline: none;
+    background: var(--input-bg); color: var(--text);
+    width: 6rem;
   }
-  .add-form button {
-    background: var(--primary);
-    color: #fff;
-    border: none;
-    padding: 0 20px;
-    border-radius: 8px;
-    font-size: 15px;
-    font-weight: 600;
+
+  /* 分类选择器 */
+  .cat-picker { display: flex; gap: 0.4rem; flex-wrap: wrap; width: 100%; margin-bottom: 0.3rem; }
+  .cat-chip {
+    border: 1.5px solid var(--border);
+    background: none;
+    font-size: 0.78rem;
+    padding: 0.25rem 0.7rem;
+    border-radius: 2rem;
     cursor: pointer;
-    transition: background 0.2s;
-  }
-  .add-form button:hover { background: #3a63e0; }
-
-  /* 布局 */
-  .main-layout {
-    display: grid;
-    grid-template-columns: 1fr 380px;
-    gap: 24px;
-  }
-
-  @media (max-width: 900px) {
-    .main-layout { grid-template-columns: 1fr; }
-  }
-
-  /* 统计条 */
-  .stats-bar {
-    display: flex;
-    gap: 16px;
-    margin-bottom: 20px;
-    flex-wrap: wrap;
-  }
-  .stat-item {
-    background: var(--card);
-    padding: 14px 20px;
-    border-radius: 12px;
-    box-shadow: var(--shadow);
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-  .stat-num { font-size: 22px; font-weight: 700; color: var(--primary); }
-  .stat-label { font-size: 13px; color: var(--text-secondary); }
-
-  /* 底部说明 */
-  .footer-note {
-    text-align: center;
+    display: inline-flex; align-items: center; gap: 0.35rem;
     color: var(--text-secondary);
-    font-size: 13px;
-    margin-top: 32px;
-    padding: 20px;
+    transition: all 0.15s;
+  }
+  .cat-chip .dot { width: 0.55rem; height: 0.55rem; border-radius: 50%; }
+  .cat-chip.active { border-color: var(--primary); color: var(--primary); background: var(--primary-light); }
+
+  /* ===== 设置弹窗 ===== */
+  .modal-overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.45);
+    display: none;
+    align-items: center; justify-content: center;
+    z-index: 200;
+    padding: 1rem;
+  }
+  .modal-overlay.open { display: flex; }
+
+  .modal {
+    background: var(--card);
+    border-radius: 1rem;
+    box-shadow: var(--shadow-lg);
+    width: 100%;
+    max-width: 480px;
+    max-height: 88vh;
+    overflow-y: auto;
+    padding: 1.5rem;
   }
 
-  /* 移动端 */
+  .modal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.25rem; }
+  .modal-header h3 { font-size: 1.15rem; }
+  .modal-close {
+    background: none; border: none; font-size: 1.4rem;
+    cursor: pointer; color: var(--text-secondary); line-height: 1;
+  }
+  .modal-close:hover { color: var(--today); }
+
+  .settings-section { margin-bottom: 1.5rem; }
+  .settings-section h4 {
+    font-size: 0.85rem; color: var(--text-secondary);
+    text-transform: uppercase; letter-spacing: 0.05em;
+    margin-bottom: 0.75rem;
+    padding-bottom: 0.4rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .setting-row { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: 0.75rem; }
+  .setting-row label { font-size: 0.9rem; }
+
+  .seg-control { display: flex; background: var(--hover-bg); border-radius: 0.5rem; padding: 3px; gap: 2px; }
+  .seg-btn {
+    border: none; background: none;
+    padding: 0.35rem 0.8rem;
+    font-size: 0.8rem;
+    border-radius: 0.4rem;
+    cursor: pointer;
+    color: var(--text-secondary);
+    transition: all 0.15s;
+  }
+  .seg-btn.active { background: var(--primary); color: #fff; font-weight: 600; }
+
+  /* 主题色选择 */
+  .swatches { display: flex; gap: 0.55rem; flex-wrap: wrap; align-items: center; }
+  .swatch {
+    width: 1.75rem; height: 1.75rem;
+    border-radius: 50%;
+    border: 3px solid transparent;
+    cursor: pointer;
+    transition: transform 0.15s, border-color 0.15s;
+    padding: 0;
+  }
+  .swatch:hover { transform: scale(1.15); }
+  .swatch.active { border-color: var(--text); }
+  .swatch-custom {
+    width: 1.75rem; height: 1.75rem;
+    border-radius: 50%;
+    border: 2px dashed var(--border);
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    background: none;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--text-secondary); font-size: 0.9rem;
+  }
+  .swatch-custom input[type="color"] {
+    position: absolute; inset: -8px;
+    opacity: 0; cursor: pointer;
+  }
+
+  /* 分类管理 */
+  .cat-manage { display: flex; flex-direction: column; gap: 0.5rem; }
+  .cat-manage-row {
+    display: flex; align-items: center; gap: 0.5rem;
+    background: var(--hover-bg);
+    padding: 0.45rem 0.6rem;
+    border-radius: 0.5rem;
+  }
+  .cat-manage-row input[type="color"] {
+    width: 1.6rem; height: 1.6rem;
+    border: none; border-radius: 0.3rem;
+    background: none; cursor: pointer; padding: 0;
+  }
+  .cat-manage-row input[type="text"] {
+    flex: 1;
+    border: none; background: none; outline: none;
+    font-size: 0.9rem; color: var(--text);
+    min-width: 0;
+  }
+  .cat-manage-row .cat-count { font-size: 0.75rem; color: var(--text-secondary); white-space: nowrap; }
+  .cat-del {
+    background: none; border: none; color: var(--border);
+    font-size: 1rem; cursor: pointer; padding: 0 0.2rem;
+  }
+  .cat-del:hover { color: var(--today); }
+  .cat-add-btn {
+    border: 1.5px dashed var(--border);
+    background: none;
+    padding: 0.45rem;
+    border-radius: 0.5rem;
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .cat-add-btn:hover { border-color: var(--primary); color: var(--primary); }
+
+  .footer-note {
+    text-align: center; color: var(--text-secondary);
+    font-size: 0.8rem; margin-top: 2rem; padding: 1.25rem;
+  }
+
   @media (max-width: 600px) {
-    .header { padding: 14px 16px; }
-    .header h1 { font-size: 17px; }
-    .container { padding: 16px 12px 40px; }
-    .calendar-card { padding: 14px; }
-    .day-cell { padding: 5px; min-height: 58px; }
-    .day-number { font-size: 14px; }
-    .task-tag { font-size: 10px; }
-    .month-title h2 { font-size: 22px; }
+    .container { padding: 1rem 0.75rem 2.5rem; }
+    .month-title h2 { font-size: 1.3rem; }
   }
 </style>
 </head>
@@ -439,6 +498,7 @@
   <div class="header-actions">
     <button class="today-btn" onclick="goToday()">回到今天</button>
     <button class="add-btn" onclick="openAddForToday()">+ 添加任务</button>
+    <button class="icon-btn" title="设置" onclick="openSettings()">⚙️</button>
   </div>
 </div>
 
@@ -455,9 +515,7 @@
 
   <div class="main-layout">
     <div class="calendar-card">
-      <div class="weekdays">
-        <div>日</div><div>一</div><div>二</div><div>三</div><div>四</div><div>五</div><div>六</div>
-      </div>
+      <div class="weekdays" id="weekdaysRow"></div>
       <div class="days-grid" id="daysGrid"></div>
     </div>
 
@@ -466,11 +524,13 @@
         <h3>当日任务</h3>
       </div>
       <div class="panel-date" id="panelDate"></div>
+      <div class="filter-chips" id="filterChips"></div>
       <div class="task-list" id="taskList"></div>
       <div class="add-form">
+        <div class="cat-picker" id="catPicker"></div>
         <input type="text" id="taskInput" placeholder="输入任务内容..." maxlength="100">
         <input type="time" id="taskTime">
-        <button onclick="addTask()">添加</button>
+        <button class="primary-btn" onclick="addTask()">添加</button>
       </div>
     </div>
   </div>
@@ -480,13 +540,95 @@
   </div>
 </div>
 
+<!-- 设置弹窗 -->
+<div class="modal-overlay" id="settingsModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>⚙️ 个性化设置</h3>
+      <button class="modal-close" onclick="closeSettings()">×</button>
+    </div>
+
+    <div class="settings-section">
+      <h4>外观</h4>
+      <div class="setting-row">
+        <label>模式</label>
+        <div class="seg-control" id="themeSeg">
+          <button class="seg-btn" data-val="light" onclick="setSetting('theme','light')">☀️ 浅色</button>
+          <button class="seg-btn" data-val="dark" onclick="setSetting('theme','dark')">🌙 深色</button>
+          <button class="seg-btn" data-val="auto" onclick="setSetting('theme','auto')">💻 跟随系统</button>
+        </div>
+      </div>
+      <div class="setting-row">
+        <label>主题色</label>
+        <div class="swatches" id="swatches"></div>
+      </div>
+    </div>
+
+    <div class="settings-section">
+      <h4>布局</h4>
+      <div class="setting-row">
+        <label>字号大小</label>
+        <div class="seg-control" id="fontSizeSeg">
+          <button class="seg-btn" data-val="s" onclick="setSetting('fontSize','s')">小</button>
+          <button class="seg-btn" data-val="m" onclick="setSetting('fontSize','m')">中</button>
+          <button class="seg-btn" data-val="l" onclick="setSetting('fontSize','l')">大</button>
+        </div>
+      </div>
+      <div class="setting-row">
+        <label>日历密度</label>
+        <div class="seg-control" id="layoutSeg">
+          <button class="seg-btn" data-val="cozy" onclick="setSetting('layout','cozy')">舒适</button>
+          <button class="seg-btn" data-val="compact" onclick="setSetting('layout','compact')">紧凑</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="settings-section">
+      <h4>日历</h4>
+      <div class="setting-row">
+        <label>一周开始于</label>
+        <div class="seg-control" id="weekStartSeg">
+          <button class="seg-btn" data-val="0" onclick="setSetting('weekStart',0)">周日</button>
+          <button class="seg-btn" data-val="1" onclick="setSetting('weekStart',1)">周一</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="settings-section">
+      <h4>任务分类管理</h4>
+      <div class="cat-manage" id="catManage"></div>
+      <button class="cat-add-btn" style="margin-top:0.6rem" onclick="addCategory()">+ 新增分类</button>
+    </div>
+  </div>
+</div>
+
 <script>
 const STORAGE_KEY = 'myCalendarTasks_v1';
+const SETTINGS_KEY = 'myCalendarSettings_v1';
+
+const DEFAULT_SETTINGS = {
+  theme: 'light',            // light | dark | auto
+  primaryColor: '#4f7cff',
+  fontSize: 'm',             // s | m | l
+  layout: 'cozy',            // cozy | compact
+  weekStart: 0,              // 0=周日 1=周一
+  categories: [
+    { id: 'work',  name: '工作', color: '#4f7cff' },
+    { id: 'life',  name: '生活', color: '#22c55e' },
+    { id: 'study', name: '学习', color: '#f59e0b' },
+    { id: 'other', name: '其他', color: '#9ca3af' }
+  ]
+};
+
+const COLOR_PRESETS = ['#4f7cff', '#7c5cff', '#22c55e', '#f59e0b', '#ef4444', '#ec4899', '#14b8a6', '#64748b'];
 
 let state = {
-  viewDate: new Date(),      // 当前查看的月份
-  selectedDate: new Date(),  // 侧边栏选中的日期
-  tasks: loadTasks()
+  viewDate: new Date(),
+  selectedDate: new Date(),
+  tasks: loadTasks(),
+  settings: loadSettings(),
+  selectedCat: null,      // 添加任务时的分类
+  filterCat: null         // 侧栏筛选分类
 };
 
 // ========== 数据存取 ==========
@@ -496,28 +638,65 @@ function loadTasks() {
     return raw ? JSON.parse(raw) : {};
   } catch(e) { return {}; }
 }
+function saveTasks() { localStorage.setItem(STORAGE_KEY, JSON.stringify(state.tasks)); }
 
-function saveTasks() {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(state.tasks));
+function loadSettings() {
+  try {
+    const raw = localStorage.getItem(SETTINGS_KEY);
+    if (raw) {
+      const s = JSON.parse(raw);
+      // 合并默认值，保证旧数据兼容
+      return { ...DEFAULT_SETTINGS, ...s };
+    }
+  } catch(e) {}
+  return { ...DEFAULT_SETTINGS, categories: [...DEFAULT_SETTINGS.categories] };
 }
+function saveSettings() { localStorage.setItem(SETTINGS_KEY, JSON.stringify(state.settings)); }
 
-// 日期转 key: yyyy-mm-dd
 function dateKey(d) {
   const y = d.getFullYear();
   const m = String(d.getMonth() + 1).padStart(2, '0');
   const day = String(d.getDate()).padStart(2, '0');
   return `${y}-${m}-${day}`;
 }
-
 function isSameDay(a, b) {
-  return a.getFullYear() === b.getFullYear() &&
-         a.getMonth() === b.getMonth() &&
-         a.getDate() === b.getDate();
+  return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
 }
-
 function formatDateChinese(d) {
   const weekDays = ['星期日','星期一','星期二','星期三','星期四','星期五','星期六'];
   return `${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日 ${weekDays[d.getDay()]}`;
+}
+
+// ========== 分类工具 ==========
+function getCategory(id) {
+  return state.settings.categories.find(c => c.id === id) || { id: '_none', name: '未分类', color: '#9ca3af' };
+}
+function countTasksInCategory(catId) {
+  let n = 0;
+  Object.values(state.tasks).forEach(list => list.forEach(t => { if (t.cat === catId) n++; }));
+  return n;
+}
+
+// ========== 设置应用 ==========
+function applySettings() {
+  const root = document.documentElement;
+  let theme = state.settings.theme;
+  if (theme === 'auto') {
+    theme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  }
+  root.setAttribute('data-theme', theme);
+  root.style.setProperty('--primary', state.settings.primaryColor);
+  root.setAttribute('data-fontsize', state.settings.fontSize);
+  root.setAttribute('data-layout', state.settings.layout);
+}
+
+function setSetting(key, val) {
+  state.settings[key] = val;
+  saveSettings();
+  applySettings();
+  renderSettingsUI();
+  renderCalendar();
+  renderSidePanel();
 }
 
 // ========== 日历渲染 ==========
@@ -529,32 +708,33 @@ function renderCalendar() {
   const month = state.viewDate.getMonth();
   document.getElementById('monthLabel').textContent = `${year}年 ${month + 1}月`;
 
+  // 星期表头（按周起始日）
+  const allWeek = ['日','一','二','三','四','五','六'];
+  const ws = state.settings.weekStart;
+  const headers = [];
+  for (let i = 0; i < 7; i++) headers.push(allWeek[(ws + i) % 7]);
+  document.getElementById('weekdaysRow').innerHTML = headers.map(h => `<div>周${h}</div>`).join('');
+
   const firstDay = new Date(year, month, 1);
   const lastDay = new Date(year, month + 1, 0);
-  const startOffset = firstDay.getDay(); // 本月1号是星期几
+  const startOffset = (firstDay.getDay() - ws + 7) % 7;
   const totalDays = lastDay.getDate();
-
   const today = new Date();
 
   // 上月填充
-  const prevLastDay = new Date(year, month, 0).getDate();
+  const prevLast = new Date(year, month, 0).getDate();
   for (let i = startOffset - 1; i >= 0; i--) {
-    const d = new Date(year, month - 1, prevLastDay - i);
-    grid.appendChild(createDayCell(d, true, today));
+    grid.appendChild(createDayCell(new Date(year, month - 1, prevLast - i), true, today));
   }
-
   // 本月
   for (let i = 1; i <= totalDays; i++) {
-    const d = new Date(year, month, i);
-    grid.appendChild(createDayCell(d, false, today));
+    grid.appendChild(createDayCell(new Date(year, month, i), false, today));
   }
-
-  // 下月填充至 6 行 (42 格) 或至少铺满当前行
+  // 下月补满
   const filled = startOffset + totalDays;
   const remaining = filled <= 35 ? 35 - filled : 42 - filled;
   for (let i = 1; i <= remaining; i++) {
-    const d = new Date(year, month + 1, i);
-    grid.appendChild(createDayCell(d, true, today));
+    grid.appendChild(createDayCell(new Date(year, month + 1, i), true, today));
   }
 
   renderStats();
@@ -575,21 +755,24 @@ function createDayCell(date, isOtherMonth, today) {
   const preview = document.createElement('div');
   preview.className = 'task-preview';
   const dayTasks = state.tasks[dateKey(date)] || [];
-  const undone = dayTasks.filter(t => !t.done);
 
   if (dayTasks.length > 0) {
-    const showCount = Math.min(3, dayTasks.length);
+    const showCount = Math.min(state.settings.layout === 'compact' ? 2 : 3, dayTasks.length);
     for (let i = 0; i < showCount; i++) {
+      const t = dayTasks[i];
+      const cat = getCategory(t.cat);
       const tag = document.createElement('div');
       tag.className = 'task-tag';
-      if (dayTasks[i].done) tag.classList.add('done');
-      tag.textContent = (dayTasks[i].time ? dayTasks[i].time + ' ' : '') + dayTasks[i].text;
+      if (t.done) tag.classList.add('done');
+      tag.textContent = (t.time ? t.time + ' ' : '') + t.text;
+      tag.style.background = `color-mix(in srgb, ${cat.color} 16%, var(--card))`;
+      tag.style.color = t.done ? 'var(--text-secondary)' : cat.color;
       preview.appendChild(tag);
     }
-    if (dayTasks.length > 3) {
+    if (dayTasks.length > showCount) {
       const more = document.createElement('div');
       more.className = 'more-tasks';
-      more.textContent = `+${dayTasks.length - 3} 更多`;
+      more.textContent = `+${dayTasks.length - showCount} 更多`;
       preview.appendChild(more);
     }
   } else {
@@ -612,28 +795,71 @@ function selectDate(date) {
 
 function renderSidePanel() {
   document.getElementById('panelDate').textContent = formatDateChinese(state.selectedDate);
+  renderFilterChips();
+  renderCatPicker();
+  renderTaskList();
+}
 
+function renderFilterChips() {
+  const wrap = document.getElementById('filterChips');
+  wrap.innerHTML = '';
+  const chips = [{ id: null, name: '全部', color: 'var(--primary)' }, ...state.settings.categories];
+  chips.forEach(c => {
+    const btn = document.createElement('button');
+    btn.className = 'filter-chip' + (state.filterCat === c.id ? ' active' : '');
+    const dot = c.id === null ? '' : `<span class="dot" style="background:${c.color}"></span>`;
+    btn.innerHTML = `${dot}${c.name}`;
+    btn.addEventListener('click', () => {
+      state.filterCat = state.filterCat === c.id ? null : c.id;
+      renderSidePanel();
+    });
+    wrap.appendChild(btn);
+  });
+}
+
+function renderCatPicker() {
+  const wrap = document.getElementById('catPicker');
+  wrap.innerHTML = '';
+  state.settings.categories.forEach(c => {
+    const btn = document.createElement('button');
+    btn.className = 'cat-chip' + (state.selectedCat === c.id ? ' active' : '');
+    btn.innerHTML = `<span class="dot" style="background:${c.color}"></span>${c.name}`;
+    btn.addEventListener('click', () => {
+      state.selectedCat = state.selectedCat === c.id ? null : c.id;
+      renderCatPicker();
+    });
+    wrap.appendChild(btn);
+  });
+}
+
+function renderTaskList() {
   const list = document.getElementById('taskList');
   list.innerHTML = '';
 
-  const dayTasks = state.tasks[dateKey(state.selectedDate)] || [];
+  let dayTasks = state.tasks[dateKey(state.selectedDate)] || [];
+  if (state.filterCat) dayTasks = dayTasks.filter(t => t.cat === state.filterCat);
 
   if (dayTasks.length === 0) {
     list.innerHTML = '<div class="task-empty">这一天还没有任务<br>在下方添加你的计划吧</div>';
     return;
   }
 
-  // 按时间排序
   dayTasks.sort((a, b) => {
     if (!a.time) return 1;
     if (!b.time) return -1;
     return a.time.localeCompare(b.time);
   });
 
-  dayTasks.forEach((task, idx) => {
+  // 需要真实索引来操作原数组
+  const allTasks = state.tasks[dateKey(state.selectedDate)] || [];
+
+  dayTasks.forEach(task => {
+    const idx = allTasks.indexOf(task);
+    const cat = getCategory(task.cat);
     const item = document.createElement('div');
     item.className = 'task-item';
     if (task.done) item.classList.add('done');
+    item.style.borderLeftColor = cat.color;
 
     const check = document.createElement('div');
     check.className = 'task-check';
@@ -646,12 +872,21 @@ function renderSidePanel() {
     textEl.className = 'task-text';
     textEl.textContent = task.text;
     body.appendChild(textEl);
+
+    const meta = document.createElement('div');
+    meta.className = 'task-meta';
     if (task.time) {
-      const timeEl = document.createElement('div');
-      timeEl.className = 'task-time';
-      timeEl.textContent = '⏰ ' + task.time;
-      body.appendChild(timeEl);
+      const t = document.createElement('span');
+      t.textContent = '⏰ ' + task.time;
+      meta.appendChild(t);
     }
+    const catEl = document.createElement('span');
+    catEl.className = 'task-cat';
+    catEl.innerHTML = `<span class="dot" style="background:${cat.color}"></span>${cat.name}`;
+    catEl.style.background = `color-mix(in srgb, ${cat.color} 14%, var(--card))`;
+    catEl.style.color = cat.color;
+    meta.appendChild(catEl);
+    body.appendChild(meta);
 
     const del = document.createElement('button');
     del.className = 'task-delete';
@@ -678,6 +913,7 @@ function addTask() {
   state.tasks[key].push({
     text: text,
     time: timeInput.value || '',
+    cat: state.selectedCat || (state.settings.categories[0] ? state.settings.categories[0].id : null),
     done: false,
     created: Date.now()
   });
@@ -730,13 +966,10 @@ function openAddForToday() {
 // ========== 统计 ==========
 function renderStats() {
   const bar = document.getElementById('statsBar');
-  const today = new Date();
-  const todayKey = dateKey(today);
+  const todayKey = dateKey(new Date());
+  const todayList = state.tasks[todayKey] || [];
+  const todayDone = todayList.filter(t => t.done).length;
 
-  let todayTotal = (state.tasks[todayKey] || []).length;
-  let todayDone = (state.tasks[todayKey] || []).filter(t => t.done).length;
-
-  // 本月统计
   const year = state.viewDate.getFullYear();
   const month = state.viewDate.getMonth();
   let monthTotal = 0, monthDone = 0;
@@ -749,27 +982,142 @@ function renderStats() {
   });
 
   bar.innerHTML = `
-    <div class="stat-item">
-      <span class="stat-num">${todayDone}/${todayTotal}</span>
-      <span class="stat-label">今日完成</span>
-    </div>
-    <div class="stat-item">
-      <span class="stat-num">${monthDone}/${monthTotal}</span>
-      <span class="stat-label">本月完成</span>
-    </div>
-    <div class="stat-item">
-      <span class="stat-num">${Object.keys(state.tasks).length}</span>
-      <span class="stat-label">有任务的日期</span>
-    </div>
+    <div class="stat-item"><span class="stat-num">${todayDone}/${todayList.length}</span><span class="stat-label">今日完成</span></div>
+    <div class="stat-item"><span class="stat-num">${monthDone}/${monthTotal}</span><span class="stat-label">本月完成</span></div>
+    <div class="stat-item"><span class="stat-num">${Object.keys(state.tasks).length}</span><span class="stat-label">有任务的日期</span></div>
   `;
+}
+
+// ========== 设置弹窗 ==========
+function openSettings() {
+  renderSettingsUI();
+  document.getElementById('settingsModal').classList.add('open');
+}
+function closeSettings() {
+  document.getElementById('settingsModal').classList.remove('open');
+}
+
+function renderSettingsUI() {
+  // 高亮当前选项
+  const highlight = (segId, val) => {
+    document.querySelectorAll(`#${segId} .seg-btn`).forEach(b => {
+      b.classList.toggle('active', b.dataset.val === String(val));
+    });
+  };
+  highlight('themeSeg', state.settings.theme);
+  highlight('fontSizeSeg', state.settings.fontSize);
+  highlight('layoutSeg', state.settings.layout);
+  highlight('weekStartSeg', state.settings.weekStart);
+
+  // 主题色
+  const sw = document.getElementById('swatches');
+  sw.innerHTML = '';
+  COLOR_PRESETS.forEach(color => {
+    const b = document.createElement('button');
+    b.className = 'swatch' + (state.settings.primaryColor === color ? ' active' : '');
+    b.style.background = color;
+    b.title = color;
+    b.addEventListener('click', () => setSetting('primaryColor', color));
+    sw.appendChild(b);
+  });
+  const custom = document.createElement('label');
+  custom.className = 'swatch-custom';
+  custom.title = '自定义颜色';
+  custom.innerHTML = `🎨<input type="color" value="${state.settings.primaryColor}">`;
+  custom.querySelector('input').addEventListener('input', e => setSetting('primaryColor', e.target.value));
+  if (!COLOR_PRESETS.includes(state.settings.primaryColor)) custom.style.borderColor = state.settings.primaryColor;
+  sw.appendChild(custom);
+
+  // 分类管理
+  const cm = document.getElementById('catManage');
+  cm.innerHTML = '';
+  state.settings.categories.forEach(cat => {
+    const row = document.createElement('div');
+    row.className = 'cat-manage-row';
+
+    const colorInput = document.createElement('input');
+    colorInput.type = 'color';
+    colorInput.value = cat.color;
+    colorInput.addEventListener('input', e => {
+      cat.color = e.target.value;
+      saveSettings();
+      renderCalendar();
+      renderSidePanel();
+    });
+
+    const nameInput = document.createElement('input');
+    nameInput.type = 'text';
+    nameInput.value = cat.name;
+    nameInput.maxLength = 8;
+    nameInput.addEventListener('input', e => {
+      cat.name = e.target.value || '未命名';
+      saveSettings();
+      renderCalendar();
+      renderSidePanel();
+    });
+
+    const count = document.createElement('span');
+    count.className = 'cat-count';
+    count.textContent = countTasksInCategory(cat.id) + ' 项';
+
+    const del = document.createElement('button');
+    del.className = 'cat-del';
+    del.textContent = '×';
+    del.title = '删除分类';
+    del.addEventListener('click', () => {
+      if (state.settings.categories.length <= 1) {
+        alert('至少保留一个分类');
+        return;
+      }
+      const n = countTasksInCategory(cat.id);
+      const msg = n > 0
+        ? `分类「${cat.name}」下有 ${n} 项任务，删除后这些任务将变为「未分类」。确定删除吗？`
+        : `确定删除分类「${cat.name}」吗？`;
+      if (!confirm(msg)) return;
+      state.settings.categories = state.settings.categories.filter(c => c.id !== cat.id);
+      if (state.selectedCat === cat.id) state.selectedCat = null;
+      if (state.filterCat === cat.id) state.filterCat = null;
+      saveSettings();
+      renderSettingsUI();
+      renderCalendar();
+      renderSidePanel();
+    });
+
+    row.appendChild(colorInput);
+    row.appendChild(nameInput);
+    row.appendChild(count);
+    row.appendChild(del);
+    cm.appendChild(row);
+  });
+}
+
+function addCategory() {
+  const id = 'cat_' + Date.now();
+  const color = COLOR_PRESETS[Math.floor(Math.random() * COLOR_PRESETS.length)];
+  state.settings.categories.push({ id, name: '新分类', color });
+  saveSettings();
+  renderSettingsUI();
+  renderCalendar();
+  renderSidePanel();
 }
 
 // ========== 事件绑定 ==========
 document.getElementById('taskInput').addEventListener('keydown', e => {
   if (e.key === 'Enter') addTask();
 });
+document.getElementById('settingsModal').addEventListener('click', e => {
+  if (e.target === e.currentTarget) closeSettings();
+});
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeSettings();
+});
+// 跟随系统主题变化
+window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+  if (state.settings.theme === 'auto') applySettings();
+});
 
-// 初始化
+// ========== 初始化 ==========
+applySettings();
 goToday();
 </script>
 
